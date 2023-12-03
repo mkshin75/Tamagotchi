@@ -8,12 +8,14 @@ using UnityEngine.EventSystems;
 
 public class Status : MonoBehaviour
 {
+    private NavScript navScript;
     public TextMeshProUGUI statusText;
     
-    private float fullness;
-    private float hygiene;
-    private float happiness;
-    private float energy;
+    public float fullness;
+    public float hygiene;
+    public float happiness;
+    public float energy;
+    public float life;
     
     private float timer;
     
@@ -29,6 +31,7 @@ public class Status : MonoBehaviour
         hygiene = 22f;
         happiness = 22f;
         energy = 22f;
+        life = fullness + hygiene + happiness + energy;
         SetStatusText();
 
         Button btn1 = feed.GetComponent<Button>();
@@ -165,7 +168,7 @@ public class Status : MonoBehaviour
    
    private void OnCollisionEnter(Collision col)
    {
-       if (col.gameObject.tag == "Draggable")
+       if (col.gameObject.CompareTag("Draggable"))
        {
            Destroy(col.gameObject);
            fullness += 10f;
@@ -200,7 +203,7 @@ public class Status : MonoBehaviour
         
         if (isSleepy())
         {
-            print("Pet semms sleepy");
+            print("Pet seems sleepy");
         }
     }
     
@@ -213,7 +216,6 @@ public class Status : MonoBehaviour
 
     private void FixedUpdate()
     {
-
         SetStatusText();
         SendAlert();
     }
