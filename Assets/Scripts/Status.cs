@@ -10,6 +10,8 @@ public class Status : MonoBehaviour
 {
     private NavScript navScript;
     public TextMeshProUGUI statusText;
+    public TextMeshProUGUI alertText;
+    public TextMeshProUGUI reactionText;
     
     public float fullness;
     public float hygiene;
@@ -23,6 +25,11 @@ public class Status : MonoBehaviour
     public Button clean;
     public Button play;
     public Button sleep;
+    
+    string hungrystate;
+    string cleanstate;
+    string happystate;
+    string energystate;
   
     // Start is called before the first frame update
     void Start()
@@ -33,6 +40,9 @@ public class Status : MonoBehaviour
         energy = 22f;
         life = fullness + hygiene + happiness + energy;
         SetStatusText();
+        SetAlertText();
+        HideReactionText();
+        SendAlert();
 
         Button btn1 = feed.GetComponent<Button>();
         btn1.onClick.AddListener(FeedThePet);
@@ -51,7 +61,7 @@ public class Status : MonoBehaviour
     {
         if (fullness > 0)
         {
-            fullness -= (0.1f * timer);
+            fullness -= (0.5f * timer);
         }
 
         if (fullness <= 0)
@@ -61,7 +71,7 @@ public class Status : MonoBehaviour
 
         if (hygiene > 0)
         {
-            hygiene -= (0.1f * timer);
+            hygiene -= (0.5f * timer);
         }
         
         if (hygiene <= 0)
@@ -71,7 +81,7 @@ public class Status : MonoBehaviour
     
         if (happiness > 0)
         {
-            happiness -= (0.1f * timer);
+            happiness -= (0.5f * timer);
         }
         
         if (happiness <= 0)
@@ -81,13 +91,15 @@ public class Status : MonoBehaviour
     
         if (energy > 0)
         {
-            energy -= (0.1f * timer);
+            energy -= (0.5f * timer);
         }
         
         if (energy <= 0)
         {
             energy = 0;
         }
+
+        life = fullness + hygiene + happiness + energy;
     }
 
     Boolean isHungry()
@@ -142,28 +154,58 @@ public class Status : MonoBehaviour
         }
     }
 
+    Boolean isFaint()
+    {
+        if (life <= 0)
+        {
+            return true;
+        }
+
+        else
+        {
+            return false;
+        }
+    }
+
+    Boolean isHealthy()
+    {
+        if (fullness >= 80 && hygiene >= 80 && happiness >= 80 && energy >= 80)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
    public void FeedThePet()
     {
+        //Instantiate
         fullness += 10f;
-        print("Yum!");  
+        reactionText.text = "Yum!";
+        ShowReactionText(); 
     }
 
    public void CleanThePet()
    {
        hygiene += 10f;
-       print("Got clean!");
+       reactionText.text = "Wow, so fresh!";
+       ShowReactionText();
    }
    
    public void PlayThePet()
    {
        happiness += 10f;
-       print("Fun!");
+       reactionText.text = "Fun!";
+       ShowReactionText();
    }
 
    public void SleepThePet()
    {
        energy += 10f;
-       print("zzz");
+       reactionText.text = "zzz...";
+       ShowReactionText();
    }
    
    private void OnCollisionEnter(Collision col)
@@ -172,7 +214,11 @@ public class Status : MonoBehaviour
        {
            Destroy(col.gameObject);
            fullness += 10f;
-           gameObject.GetComponent<NavScript>().enabled = false;
+           // *FIXME
+           // *gameobject is the Food, NavScript is a component of the Pet. Currently solved by changing destination to the bed
+           // gameObject.GetComponent<NavScript>().enabled = false;
+           reactionText.text = "Yum yum... Is it my birthday?";
+           ShowReactionText();
        }
    }
    
@@ -184,26 +230,63 @@ public class Status : MonoBehaviour
                           "Energy: " + energy.ToString();
     }
 
-    void SendAlert()
+    void SetAlertText()
     {
         if (isHungry())
-        {
-            print("Pet seems hungry");
-        }
-
+            hungrystate = "hungry ";
+        if (!isHungry())
+            hungrystate = "";
+        
         if (isDirty())
-        {
-            print("Pet seems dirty");
-        }
-
+            cleanstate = "dirty ";
+        if (!isDirty())
+            cleanstate = "";
+        
         if (isUnhappy())
-        {
-            print("Pet seems unhappy");    
-        }
+            happystate = "unhappy ";
+        if (!isUnhappy())
+            happystate = "";
         
         if (isSleepy())
+            energystate = "sleepy ";
+        if (!isSleepy())
+            energystate = "";
+    }
+
+    void ShowReactionText()
+    {
+        reactionText.enabled = true;
+        Invoke("HideReactionText", 3);
+    }
+
+    void HideReactionText()
+    {
+        reactionText.enabled = false;
+    }
+
+    void SendAlert()
+    {
+        if (isFaint())
+            alertText.text = "Oh no, Your pet fainted!";
+        
+        else if (isHealthy())
+            alertText.text = "Your pet seems healthy and satisfied!";
+
+        else if (isHungry() || isUnhappy() || isDirty() || isSleepy())
+            alertText.text = "Your pet seems " + hungrystate + cleanstate + happystate + energystate;
+
+        else
+            alertText.text = "";
+    }
+
+    void PressOneToFaint()
+    {
+        if (Input.GetKeyDown(KeyCode.Alpha1))
         {
-            print("Pet seems sleepy");
+            fullness = 0;
+            hygiene = 0;
+            happiness = 0;
+            energy = 0;
         }
     }
     
@@ -212,6 +295,8 @@ public class Status : MonoBehaviour
     { 
         timer = Time.deltaTime;
         StatusUpdate();
+        SetAlertText();
+        PressOneToFaint();
     }
 
     private void FixedUpdate()
