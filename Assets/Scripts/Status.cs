@@ -18,6 +18,8 @@ public class Status : MonoBehaviour
     public float happiness;
     public float energy;
     public float life;
+
+    public GameObject food;
     
     private float timer;
     
@@ -180,11 +182,11 @@ public class Status : MonoBehaviour
     }
 
    public void FeedThePet()
-    {
-        //Instantiate
-        fullness += 10f;
-        reactionText.text = "Yum!";
-        ShowReactionText(); 
+   {
+        food.transform.position = new Vector3(-4, 4, -4);
+        // fullness += 10f;
+        // reactionText.text = "Yum!";
+        // ShowReactionText(); 
     }
 
    public void CleanThePet()
@@ -212,7 +214,7 @@ public class Status : MonoBehaviour
    {
        if (col.gameObject.CompareTag("Draggable"))
        {
-           Destroy(col.gameObject);
+           col.gameObject.transform.position = new Vector3(-11, 1, 0.3f);
            fullness += 10f;
            // *FIXME
            // *gameobject is the Food, NavScript is a component of the Pet. Currently solved by changing destination to the bed

@@ -39,8 +39,11 @@ public class NavScript : MonoBehaviour
 
         foreach (Collider col in colls)
         {
-            if (col.gameObject.CompareTag("Draggable") )
+            if (col.gameObject.CompareTag("Draggable"))
+            {
+                target = col.gameObject.transform;
                 StartChase();
+            }
         }
     }
 
@@ -70,6 +73,7 @@ public class NavScript : MonoBehaviour
 
     void StartEat()
     {
+        target = pet.transform;
         petAnim.SetBool("isWalk", false);
         petAnim.SetBool("isIdle", false);
         petAnim.SetBool("doEat", true);
@@ -79,5 +83,10 @@ public class NavScript : MonoBehaviour
     void Update()
     {
         ScanFood();
+        
+        if (target == null)
+        {
+            target = pet.transform;
+        }
     }
 }
