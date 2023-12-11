@@ -12,6 +12,8 @@ public class Status : MonoBehaviour
     public TextMeshProUGUI statusText;
     public TextMeshProUGUI alertText;
     public TextMeshProUGUI reactionText;
+    public TextMeshProUGUI growthHealthText;
+    public TextMeshProUGUI winLoseText;
     
     public float fullness;
     public float hygiene;
@@ -19,9 +21,19 @@ public class Status : MonoBehaviour
     public float energy;
     public float life;
 
+    private float growthPoint;
+    private float healthPoint;
+
     public GameObject food;
     
     private float timer;
+    private float timespeed = 0.2f;
+
+    private float growthTimer;
+    private float normalGrowthTimer;
+    private float goodGrowthTimer;
+    private float greatGrowthTimer;
+    private float faintTimer;
     
     public Button feed;
     public Button clean;
@@ -41,10 +53,21 @@ public class Status : MonoBehaviour
         happiness = 22f;
         energy = 22f;
         life = fullness + hygiene + happiness + energy;
+
+        growthPoint = 0;
+        healthPoint = 3;
+
+        growthTimer = 30f;
+        normalGrowthTimer = 30f;
+        goodGrowthTimer = 30f;
+        greatGrowthTimer = 30f;
+        faintTimer = 20f;
+        
         SetStatusText();
         SetAlertText();
         HideReactionText();
         SendAlert();
+        winLoseText.enabled = false;
 
         Button btn1 = feed.GetComponent<Button>();
         btn1.onClick.AddListener(FeedThePet);
@@ -63,7 +86,7 @@ public class Status : MonoBehaviour
     {
         if (fullness > 0)
         {
-            fullness -= (0.5f * timer);
+            fullness -= (timespeed * timer);
         }
 
         if (fullness <= 0)
@@ -73,7 +96,7 @@ public class Status : MonoBehaviour
 
         if (hygiene > 0)
         {
-            hygiene -= (0.5f * timer);
+            hygiene -= (timespeed * timer);
         }
         
         if (hygiene <= 0)
@@ -83,7 +106,7 @@ public class Status : MonoBehaviour
     
         if (happiness > 0)
         {
-            happiness -= (0.5f * timer);
+            happiness -= (timespeed * timer);
         }
         
         if (happiness <= 0)
@@ -93,7 +116,7 @@ public class Status : MonoBehaviour
     
         if (energy > 0)
         {
-            energy -= (0.5f * timer);
+            energy -= (timespeed * timer);
         }
         
         if (energy <= 0)
@@ -104,6 +127,153 @@ public class Status : MonoBehaviour
         life = fullness + hygiene + happiness + energy;
     }
 
+    void startGrowthTimer()
+    {
+        if (growthTimer >= 0)
+        {
+            growthTimer -= Time.deltaTime;
+        }
+        
+        else if (growthTimer < 0)
+        {
+            growthPoint += 0.1f;
+            growthTimer += 30f;
+        }
+    }
+
+    void startNormalGrowthTimer()
+    {
+        startGrowthTimer();
+        
+        if (normalGrowthTimer >= 0)
+        {
+            normalGrowthTimer -= Time.deltaTime;
+        }
+        
+        else if (normalGrowthTimer < 0)
+        {
+            growthPoint += 0.1f;
+            healthPoint += 0.1f;
+            normalGrowthTimer += 30f;
+        }
+    }
+
+    void startGoodGrowthTimer()
+    {
+        startGrowthTimer();
+        startNormalGrowthTimer();
+        
+        if (goodGrowthTimer >= 0)
+        {
+            goodGrowthTimer -= Time.deltaTime;
+        }
+        
+        else if (goodGrowthTimer < 0)
+        {
+            growthPoint += 0.1f;
+            goodGrowthTimer += 30f;
+        }
+    }
+
+    void startGreatGrowthTimer()
+    {
+        startGrowthTimer();
+        startNormalGrowthTimer();
+        startGoodGrowthTimer();
+        
+        if (greatGrowthTimer >= 0)
+        {
+            greatGrowthTimer -= Time.deltaTime;
+        }
+        
+        else if (greatGrowthTimer < 0)
+        {
+            growthPoint += 0.1f;
+            greatGrowthTimer += 30f;
+        }
+    }
+
+    void GrowthUpdate()
+    {
+        if (isFaint())
+        {
+            growthTimer = 30f;
+            normalGrowthTimer = 30f;
+            goodGrowthTimer = 30f;
+            greatGrowthTimer = 30f;
+        }
+        
+        else if (isBadCondition())
+        {
+            startGrowthTimer();
+            normalGrowthTimer = 30f;
+            goodGrowthTimer = 30f;
+            greatGrowthTimer = 30f;
+        }
+
+        else if (isNormalCondition())
+        {
+            startNormalGrowthTimer();
+            goodGrowthTimer = 30f;
+            greatGrowthTimer = 30f;
+        }
+
+        else if (isGoodCondition())
+        {
+            startGoodGrowthTimer();
+            greatGrowthTimer = 30f;
+        }
+
+        else if (isGreatCondition())
+        {
+            startGreatGrowthTimer();
+        }
+    }
+
+    void startFaintTimer()
+    {
+        if (faintTimer >= 0)
+        {
+            faintTimer -= Time.deltaTime;
+        }
+        
+        else if (faintTimer < 0)
+        {
+            healthPoint -= 1;
+            faintTimer += 20f;
+        }
+    }
+
+    void FaintCheck()
+    {
+        if (isFaint())
+        {
+            startFaintTimer();
+        }
+
+        else
+        {
+            faintTimer = 20f;
+        }
+    }
+
+    void HealthUpdate()
+    {
+        FaintCheck();
+
+        if (healthPoint <= 0)
+        {
+            healthPoint = 0;
+        }
+        
+        else if (healthPoint > 3)
+        {
+            healthPoint = 3;
+        }
+    }
+
+
+    
     Boolean isHungry()
     {
         if (fullness < 20)
@@ -169,7 +339,7 @@ public class Status : MonoBehaviour
         }
     }
 
-    Boolean isHealthy()
+    Boolean isGreatCondition()
     {
         if (fullness >= 80 && hygiene >= 80 && happiness >= 80 && energy >= 80)
         {
@@ -180,6 +350,44 @@ public class Status : MonoBehaviour
             return false;
         }
     }
+
+    Boolean isGoodCondition()
+    {
+        if (!isGreatCondition() && !(isHungry() || isUnhappy() || isDirty() || isSleepy()))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    Boolean isNormalCondition()
+    {
+        if (!isFaint() && !isBadCondition() && (isHungry() || isUnhappy() || isDirty() || isSleepy()))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    
+    Boolean isBadCondition()
+    {
+        if (!isFaint() && (isHungry() && isUnhappy() && isDirty() && isSleepy()))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    
+    
 
    public void FeedThePet()
    {
@@ -226,10 +434,15 @@ public class Status : MonoBehaviour
    
     void SetStatusText()
     {
-        statusText.text = "Fullness: " + fullness.ToString() + "\n" + 
-                          "Hygiene: " + hygiene.ToString() + "\n" +
-                          "Happiness: " + happiness.ToString() + "\n" +
-                          "Energy: " + energy.ToString();
+        statusText.text = "Fullness: " + fullness.ToString("F1") + "\n" + 
+                          "Hygiene: " + hygiene.ToString("F1") + "\n" +
+                          "Happiness: " + happiness.ToString("F1") + "\n" +
+                          "Energy: " + energy.ToString("F1");
+        
+        growthHealthText.text = "Growth Point: " + growthPoint.ToString("F1") + "\n" 
+                                + "Health Point:" + healthPoint.ToString("F1") + "\n" 
+                                + "Growth Timer: " + growthTimer.ToString(("F3")) + "\n" 
+                                + "Faint Timer: " + faintTimer.ToString(("F3"));
     }
 
     void SetAlertText()
@@ -271,7 +484,7 @@ public class Status : MonoBehaviour
         if (isFaint())
             alertText.text = "Oh no, Your pet fainted!";
         
-        else if (isHealthy())
+        else if (isGreatCondition())
             alertText.text = "Your pet seems healthy and satisfied!";
 
         else if (isHungry() || isUnhappy() || isDirty() || isSleepy())
@@ -291,6 +504,39 @@ public class Status : MonoBehaviour
             energy = 0;
         }
     }
+
+    void PressTwoToGrow()
+    {
+        if (Input.GetKeyDown(KeyCode.Alpha2))
+        {
+            growthPoint += 1;
+        }
+    }
+
+    void PressThreeToLoseHealth()
+    {
+        if (Input.GetKeyDown(KeyCode.Alpha3))
+        {
+            healthPoint -= 1;
+        }
+    }
+
+    void EndingCheck()
+    {
+        if (healthPoint <= 0)
+        {
+            winLoseText.text = "GAME OVER" + "\n" + "Your pet is dead...";
+            winLoseText.enabled = true;
+        }
+        
+        else if (growthPoint >= 3)
+        {
+            winLoseText.text = "STAGE CLEAR" + "\n" + "Your pet has grown up!";
+            winLoseText.enabled = true;
+        }
+        
+
+    }
     
     // Update is called once per frame
     void Update()
@@ -299,11 +545,16 @@ public class Status : MonoBehaviour
         StatusUpdate();
         SetAlertText();
         PressOneToFaint();
+        PressTwoToGrow();
+        PressThreeToLoseHealth();
+        HealthUpdate();
+        GrowthUpdate();
     }
 
     private void FixedUpdate()
     {
         SetStatusText();
         SendAlert();
+        EndingCheck();
     }
 }
